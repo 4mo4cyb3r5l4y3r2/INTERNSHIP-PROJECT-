@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TASK 2</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #000000;
+      color: #ffffff;
+    }
+
+    header {
+      background-color: #1a365d; /* Deep blue */
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      background-color: #2c5282; /* Medium blue */
+      padding: 0.8rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+      background-color: #4299e1; /* Light blue */
+      transform: translateY(-2px);
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 2rem;
+      background: #000000;
+    }
+
+    section {
+      background: #1a1a1a;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      border: 1px solid #2d3748;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    input, textarea {
+      padding: 0.7rem;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      font-size: 1rem;
+      background: #2d2d2d;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+      outline: none;
+    }
+
+    button {
+      padding: 0.7rem;
+      background-color: #2b6cb0; /* Dark blue */
+      color: white;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #4299e1; /* Light blue */
+      transform: translateY(-2px);
+    }
+
+    .todo-container li {
+      background: #2d2d2d;
+      padding: 0.7rem;
+      margin: 0.5rem 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 8px;
+      flex-wrap: wrap;
+      border: 1px solid #2d3748;
+    }
+
+    .task-text.completed {
+      text-decoration: line-through;
+      color: #a0aec0;
+    }
+
+    .task-buttons button.complete {
+      background-color: #38a169; /* Green */
+    }
+
+    .task-buttons button.delete {
+      background-color: #c53030; /* Red */
+    }
+
+    .gallery-grid img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #2d3748;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TASK 2</h1>
+  </header>
+  <nav>
+    <a href="#form">Contact Form</a>
+    <a href="#todo">To-Do List</a>
+    <a href="#gallery">Image Gallery</a>
+  </nav>
+  <div class="container">
+
+    <!-- Contact Form -->
+    <section id="form">
+      <h2>Contact Form</h2>
+      <form onsubmit="return validateForm()">
+        <input type="text" id="name" placeholder="Name" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <textarea id="message" placeholder="Message" required></textarea>
+        <button type="submit">Submit</button>
+      </form>
+    </section>
+
+    <!-- To-Do List -->
+    <section id="todo">
+      <h2>To-Do List</h2>
+      <div class="todo-container">
+        <input type="text" id="taskInput" placeholder="Enter a task..." />
+        <button onclick="addTask()">Add Task</button>
+        <ul id="taskList"></ul>
+        <div id="taskStats" style="margin-top: 1rem; font-weight: bold;"></div>
+      </div>
+    </section>
+
+    <!-- Image Gallery -->
+    <section id="gallery">
+      <h2>Image Gallery</h2>
+      <div class="gallery-controls">
+        <input type="text" id="imageUrl" placeholder="Enter image URL..." />
+        <button onclick="addImage()">Add Image</button>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </section>
+  </div>
+
+  <script>
+    // Form Validation
+    function validateForm() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const message = document.getElementById("message").value.trim();
+      const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
+
+      if (!name || !email || !message) {
+        alert("Please fill in all fields.");
+        return false;
+      }
+
+      if (!emailPattern.test(email)) {
+        alert("Please enter a valid email.");
+        return false;
+      }
+
+      alert("Form submitted successfully!");
+      return true;
+    }
+
+    // To-Do List
+    const taskList = document.getElementById("taskList");
+    const taskStats = document.getElementById("taskStats");
+
+    function loadTasks() {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.forEach(({ text, completed }) => createTask(text, completed));
+      updateStats();
+    }
+
+    function createTask(text, completed = false) {
+      const li = document.createElement("li");
+
+      const taskText = document.createElement("span");
+      taskText.textContent = text;
+      taskText.classList.add("task-text");
+      if (completed) taskText.classList.add("completed");
+
+      const buttonGroup = document.createElement("div");
+      buttonGroup.className = "task-buttons";
+
+      const completeBtn = document.createElement("button");
+      completeBtn.textContent = "complete task";
+      completeBtn.className = "complete";
+      completeBtn.onclick = () => {
+        taskText.classList.toggle("completed");
+        saveTasks();
+        updateStats();
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete task";
+      deleteBtn.className = "delete";
+      deleteBtn.onclick = () => {
+        li.remove();
+        saveTasks();
+        updateStats();
+      };
+
+      buttonGroup.appendChild(completeBtn);
+      buttonGroup.appendChild(deleteBtn);
+
+      li.appendChild(taskText);
+      li.appendChild(buttonGroup);
+      taskList.appendChild(li);
+
+      updateStats();
+    }
+
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const task = input.value.trim();
+      if (!task) return;
+      createTask(task, false);
+      input.value = "";
+      saveTasks();
+      updateStats();
+    }
+
+    function saveTasks() {
+      const tasks = [];
+      document.querySelectorAll("#taskList li").forEach(li => {
+        const text = li.querySelector(".task-text").textContent;
+        const completed = li.querySelector(".task-text").classList.contains("completed");
+        tasks.push({ text, completed });
+      });
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function updateStats() {
+      const allTasks = document.querySelectorAll("#taskList li").length;
+      const completedTasks = document.querySelectorAll(".task-text.completed").length;
+      const pendingTasks = allTasks - completedTasks;
+
+      taskStats.textContent = `Total: ${allTasks} | Completed: ${completedTasks} | Pending: ${pendingTasks}`;
+    }
+
+    // Image Gallery
+    const galleryGrid = document.getElementById("galleryGrid");
+
+    function addImage() {
+      const url = document.getElementById("imageUrl").value.trim();
+      if (!url) return;
+
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "Gallery Image";
+      img.onerror = () => {
+        alert("Invalid image URL!");
+        img.remove();
+      };
+
+      galleryGrid.appendChild(img);
+      document.getElementById("imageUrl").value = "";
+    }
+
+    window.onload = loadTasks;
+  </script>
+</body>
+</html>
