@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interactive Quiz & Indian Jokes</title>
+  <style>
+    /* Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .quiz-container, .joke-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    h1, h2 {
+      margin-bottom: 15px;
+    }
+
+    .question {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option {
+      padding: 10px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-align: left;
+    }
+
+    .option:hover {
+      background: #e9ecef;
+    }
+
+    .option.correct {
+      background: #d4edda;
+      border-color: #c3e6cb;
+    }
+
+    .option.incorrect {
+      background: #f8d7da;
+      border-color: #f5c6cb;
+    }
+
+    .joke-container {
+      text-align: center;
+    }
+
+    .button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      font-size: 1rem;
+      margin-top: 15px;
+    }
+
+    .button:hover {
+      background: #0056b3;
+    }
+
+    .button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      margin-bottom: 15px;
+      color: #6c757d;
+    }
+
+    .loading {
+      animation: pulse 1.5s infinite;
+      color: #6c757d;
+    }
+
+    .joke-setup {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+
+    .joke-punchline {
+      font-size: 1.2rem;
+      color: #e74c3c;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 600px) {
+      .options {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .option {
+        flex: 1 1 45%;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+      }
+
+      .joke-container {
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="quiz-container">
+      <h1>JavaScript Quiz</h1>
+      <div class="progress" id="progress"></div>
+      <div id="quiz"></div>
+    </div>
+
+    <div class="joke-container">
+      <h2>Desi Jokes</h2>
+      <div id="joke"></div>
+      <button class="button" id="joke-button">New Joke</button>
+    </div>
+  </div>
+
+  <script>
+    const QUIZ_DATA = [
+      {
+        question: "Which language runs in a web browser?",
+        options: ["Java", "C", "Python", "JavaScript"],
+        correct: 3
+      },
+      {
+        question: "What does CSS stand for?",
+        options: [
+          "Cascading Style Sheets",
+          "Creative Style System",
+          "Computer Style Sheets",
+          "Colorful Style Syntax"
+        ],
+        correct: 0
+      },
+      {
+        question: "Which HTML tag is used for JavaScript?",
+        options: ["&lt;script&gt;", "&lt;javascript&gt;", "&lt;js&gt;", "&lt;code&gt;"],
+        correct: 0
+     }
+ 
+    ];
+
+    const INDIAN_JOKES = [
+      {
+        setup: "Why did the Indian student bring a ladder to school?",
+        punchline: "Because he wanted to go to high class!"
+      },
+      {
+        setup: "Why do Mumbai locals love the monsoon?",
+        punchline: "Free swimming lessons in the streets!"
+      },
+      {
+        setup: "Why did the Delhi auntie cross the road?",
+        punchline: "To check the price difference!"
+      },
+      {
+        setup: "Why don't Punjabis play hide and seek?",
+        punchline: "Because they shout 'OYE!' when they find you!"
+      },
+      {
+        setup: "Why did the Bengali take a ruler to the sweet shop?",
+        punchline: "To measure the exact amount of mishti!"
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let currentJokeIndex = -1;
+
+    const quizElement = document.getElementById('quiz');
+    const progressElement = document.getElementById('progress');
+    const jokeElement = document.getElementById('joke');
+    const jokeButton = document.getElementById('joke-button');
+
+    function buildQuiz() {
+      const question = QUIZ_DATA[currentQuestion];
+
+      const optionsHtml = question.options.map((option, index) => `
+        <button class="option" data-index="${index}" aria-label="Option ${index + 1}">
+          ${option}
+        </button>
+      `).join('');
+
+      quizElement.innerHTML = `
+        <div class="question fade-in">${question.question}</div>
+        <div class="options">${optionsHtml}</div>
+      `;
+
+      progressElement.textContent = `Question ${currentQuestion + 1} of ${QUIZ_DATA.length}`;
+
+      document.querySelectorAll('.option').forEach(btn => {
+        btn.addEventListener('click', handleOptionClick);
+      });
+    }
+
+    function handleOptionClick(event) {
+      const selectedIndex = parseInt(event.currentTarget.dataset.index);
+      checkAnswer(selectedIndex);
+    }
+
+    function checkAnswer(selectedIndex) {
+      const correctIndex = QUIZ_DATA[currentQuestion].correct;
+      const options = document.querySelectorAll('.option');
+
+      options.forEach(option => {
+        option.disabled = true;
+        const idx = parseInt(option.dataset.index);
+        option.classList.toggle('correct', idx === correctIndex);
+        option.classList.toggle('incorrect', idx === selectedIndex && idx !== correctIndex);
+      });
+
+      if (selectedIndex === correctIndex) score++;
+
+      setTimeout(() => {
+        currentQuestion++;
+        if (currentQuestion < QUIZ_DATA.length) {
+          buildQuiz();
+        } else {
+          showResults();
+        }
+      }, 1500);
+    }
+
+    function showResults() {
+      quizElement.innerHTML = `
+        <div class="fade-in">
+          <h2>Quiz Complete!</h2>
+          <p>Your score: ${score}/${QUIZ_DATA.length}</p>
+          <button class="button" onclick="location.reload()">Restart Quiz</button>
+        </div>
+      `;
+      progressElement.textContent = '';
+    }
+
+    function showIndianJoke() {
+      jokeElement.innerHTML = '<div class="loading">Chai peete hue joke la rahe hain...</div>';
+      jokeButton.disabled = true;
+
+      setTimeout(() => {
+        let newIndex;
+        do {
+          newIndex = Math.floor(Math.random() * INDIAN_JOKES.length);
+        } while (newIndex === currentJokeIndex);
+
+        currentJokeIndex = newIndex;
+        const joke = INDIAN_JOKES[currentJokeIndex];
+
+        jokeElement.innerHTML = `
+          <div class="fade-in">
+            <div class="joke-setup">${joke.setup}</div>
+            <div class="joke-punchline">${joke.punchline}</div>
+          </div>
+        `;
+        jokeButton.disabled = false;
+      }, 800);
+    }
+
+    jokeButton.addEventListener('click', showIndianJoke);
+
+    buildQuiz();
+    showIndianJoke();
+  </script>
+</body>
+</html>
